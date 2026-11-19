@@ -26,38 +26,43 @@ for c in herdr node claude; do command -v "${c}" >/dev/null || die "${c} が見�
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SELF="${HERDR_PANE_ID}"
 
-# 標準入力の JSON を読み、r（= .result）を使った JavaScript の式の値を出す（Node.js で読む）
+# 標準入力の JSON を読み、r（= .result）を使った JavaScript の式の値を出す（Node.js で読む）。
+# 2 つ目からの引数は、式の中で a[0]・a[1]… として使える（シェルの値を式に直接埋め込まない）
 #   例: herdr agent list | js 'r.agents.length'
+#       herdr agent list | js 'r.agents.some((x) => x.name === a[0])' controller
 js() {
   node -e '
     let s = ""; process.stdin.on("data", (c) => (s += c)).on("end", () => {
       const r = JSON.parse(s).result;
+      const a = process.argv.slice(2);
       const v = eval(process.argv[1]);
       process.stdout.write(v === undefined || v === null ? "" : String(v));
-    });' "$1"
+    });' "$@"
 }
 
 # --- 1) 同じ名前のエージェントがいないか ---------------------------------------
-dups="$(herdr agent list | js "r.agents.map((a) => a.name).filter((n) => '${NAMES[*]}'.split(' ').includes(n)).join(' ')")"
+dups="$(herdr agent list | js 'r.agents.map((x) => x.name).filter((n) => a.includes(n)).join(" ")' "${NAMES[@]}")" \
+  || die "herdr agent list を読めませんでした。"
 [ -z "${dups}" ] || die "同じ名前のエージェントがすでにいます: ${dups}（herdr agent list で確かめる）。"
 
 # このペインで Claude Code などのエージェントが動いていないか（! で Claude Code の中から打った場合など）
-self_agent="$(herdr pane get "${SELF}" | js 'r.pane.agent')"
+self_agent="$(herdr pane get "${SELF}" | js 'r.pane.agent')" || die "このペイン（${SELF}）の情報を読めませんでした。"
 [ -z "${self_agent}" ] || die "このペイン（${SELF}）では ${self_agent} が動いています。エージェントを終了し、シェルで打ってください。"
 
 # --- 2) ペインの数と形を確かめ、右上・右下のペイン ID を決める ----------------------
-layout="$(herdr pane layout --pane "${SELF}")"
-count="$(printf '%s' "${layout}" | js 'r.layout.panes.length')"
+layout="$(herdr pane layout --pane "${SELF}")" || die "ペインの配置（herdr pane layout）を読めませんでした。"
+count="$(printf '%s' "${layout}" | js 'r.layout.panes.length')" || true
+[ -n "${count}" ] || die "ペインの数を読み取れませんでした（herdr pane layout --current で確かめる）。"
 
 # 右のペインがシェルの入力待ちで、clone したフォルダーにいるか（agent start が使える状態か）
 check_shell_pane() {
   local id="$1" info shell fg cwd
-  info="$(herdr pane process-info --pane "${id}")"
+  info="$(herdr pane process-info --pane "${id}")" || die "ペイン ${id} の情報を読めませんでした。"
   shell="$(printf '%s' "${info}" | js 'r.process_info.shell_pid')"
   fg="$(printf '%s' "${info}" | js 'r.process_info.foreground_process_group_id')"
   [ -n "${shell}" ] && [ "${shell}" = "${fg}" ] \
     || die "ペイン ${id} はシェルの入力待ちではありません（何かが動いています）。終了してから打ち直してください。"
-  cwd="$(herdr pane get "${id}" | js 'r.pane.foreground_cwd || r.pane.cwd')"
+  cwd="$(herdr pane get "${id}" | js 'r.pane.foreground_cwd || r.pane.cwd')" || die "ペイン ${id} の情報を読めませんでした。"
   [ "${cwd}" = "${ROOT}" ] \
     || die "ペイン ${id} のフォルダーが ${cwd} です。そのペインで cd ${ROOT} をしてから打ち直してください。"
 }
@@ -65,25 +70,30 @@ check_shell_pane() {
 case "${count}" in
   1)
     # 左右に分け（右上になる）、右を上下に分ける（右下になる）。入力はこのペインに残す
-    RIGHT_TOP="$(herdr pane split --pane "${SELF}" --direction right --cwd "${ROOT}" --no-focus | js 'r.pane.pane_id')"
+    RIGHT_TOP="$(herdr pane split --pane "${SELF}" --direction right --cwd "${ROOT}" --no-focus | js 'r.pane.pane_id')" || true
     [ -n "${RIGHT_TOP}" ] || die "ペインを左右に分けられませんでした。"
-    RIGHT_BOTTOM="$(herdr pane split --pane "${RIGHT_TOP}" --direction down --cwd "${ROOT}" --no-focus | js 'r.pane.pane_id')" \
-      || { echo "start-handson: 右のペインを上下に分けられませんでした。右のペイン（${RIGHT_TOP}）が残っています。" >&2; exit 1; }
+    RIGHT_BOTTOM="$(herdr pane split --pane "${RIGHT_TOP}" --direction down --cwd "${ROOT}" --no-focus | js 'r.pane.pane_id')" || true
+    if [ -z "${RIGHT_BOTTOM}" ]; then
+      # 分けた右のペインを閉じて、元の 1 つに戻してから止まる
+      herdr pane close "${RIGHT_TOP}" >/dev/null 2>&1 \
+        || echo "start-handson: 右のペイン（${RIGHT_TOP}）を閉じられませんでした。herdr pane close ${RIGHT_TOP} で閉じてください。" >&2
+      die "右のペインを上下に分けられませんでした。"
+    fi
     echo "ペインを 3 つに分けました: 左 ${SELF}・右上 ${RIGHT_TOP}・右下 ${RIGHT_BOTTOM}"
     ;;
   3)
     # 「左が全体の高さ・右に上下 2 つ」の形で、このペインが左かを座標から確かめる
-    ids="$(printf '%s' "${layout}" | js "
+    ids="$(printf '%s' "${layout}" | js '
       (() => {
-        const L = r.layout, self = '${SELF}';
+        const L = r.layout, self = a[0];
         const me = L.panes.find((p) => p.pane_id === self);
         const others = L.panes.filter((p) => p.pane_id !== self);
         if (!me || me.rect.x !== L.area.x || me.rect.height !== L.area.height) return '';
         if (others.some((p) => p.rect.x <= me.rect.x || p.rect.x !== others[0].rect.x)) return '';
         others.sort((a, b) => a.rect.y - b.rect.y);
         if (others[0].rect.y === others[1].rect.y) return '';
-        return others.map((p) => p.pane_id).join(' ');
-      })()")"
+        return others.map((p) => p.pane_id).join(" ");
+      })()' "${SELF}")" || true
     [ -n "${ids}" ] || die "ペインが 3 つありますが、「左に 1 つ・右に上下 2 つ」でないか、このペインが左ではありません（herdr pane layout --current で確かめる）。"
     read -r RIGHT_TOP RIGHT_BOTTOM <<<"${ids}"
     check_shell_pane "${RIGHT_TOP}"
@@ -99,8 +109,12 @@ esac
 for pair in "agent-a ${RIGHT_TOP}" "agent-b ${RIGHT_BOTTOM}"; do
   read -r name pane <<<"${pair}"
   echo "${name}（${pane}）で Claude Code を起動しています（最大 30 秒ほど）…"
-  herdr agent start "${name}" --kind claude --pane "${pane}" >/dev/null \
-    || { echo "start-handson: ${name} を起動できませんでした（herdr agent read ${pane} --lines 40 で画面を見る）。" >&2; exit 1; }
+  if ! herdr agent start "${name}" --kind claude --pane "${pane}" >/dev/null; then
+    echo "start-handson: ${name}（${pane}）を起動できませんでした。画面は herdr agent read ${pane} --lines 40 で見られます。" >&2
+    echo "start-handson: 打ち直す前に、右のペインで起動した Claude Code を /exit で終了し、どちらもシェルの入力待ちにしてください" >&2
+    echo "start-handson: （名前が残っていると「同じ名前のエージェントがすでにいます」で止まるため）。" >&2
+    exit 1
+  fi
 done
 
 # --- 4) このペインで Claude Code を起動し、controller と名付ける ------------------
@@ -112,7 +126,7 @@ done
     sleep 2
     now="$(herdr pane get "${SELF}" 2>/dev/null | js 'r.pane.agent' 2>/dev/null || true)"
     [ "${now}" = claude ] || { stable=0; continue; }
-    cur="$(herdr agent list 2>/dev/null | js "(r.agents.find((a) => a.pane_id === '${SELF}') || {}).name" 2>/dev/null || true)"
+    cur="$(herdr agent list 2>/dev/null | js '(r.agents.find((x) => x.pane_id === a[0]) || {}).name' "${SELF}" 2>/dev/null || true)"
     if [ "${cur}" = controller ]; then
       stable=$((stable + 1)); [ "${stable}" -ge 10 ] && exit 0
     else
