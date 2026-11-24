@@ -182,7 +182,7 @@ describe("面（ウェーブ）", () => {
   });
 
   it("面 2 では隊列が面 1 の 1.2 倍の速さで横に動く", () => {
-    const dt = 0.01;
+    const dt = 0.1; // 1 フレームで動く量（約 3px と 3.6px）の差が toBeCloseTo の精度より十分大きくなるようにする
     const w1 = playing();
     const x1 = w1.enemies[0].x;
     step(w1, NONE, dt, never);
