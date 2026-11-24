@@ -35,17 +35,29 @@ export function createGame(): GameState {
     enemyBullets: [],
     direction: 1,
     score: 0,
+    wave: 1,
     lives: PLAYER.lives,
     cooldown: 0,
     enemyFireTimer: ENEMY_FIRE.interval,
   };
 }
 
-/** 残りの敵の数に応じた隊列の横の速さ。減るほど速くなる。 */
-export function formationSpeed(alive: number, total: number): number {
-  if (total <= 1 || alive <= 0) return FORMATION.baseSpeed * FORMATION.maxSpeedRate;
+/** 残りの敵の数と面の番号に応じた隊列の横の速さ。敵が減るほど・面が進むほど速くなる。 */
+export function formationSpeed(alive: number, total: number, wave = 1): number {
+  const waveRate = FORMATION.waveSpeedRate ** (wave - 1);
+  if (total <= 1 || alive <= 0) return FORMATION.baseSpeed * FORMATION.maxSpeedRate * waveRate;
   const killedRate = (total - alive) / (total - 1);
-  return FORMATION.baseSpeed * (1 + (FORMATION.maxSpeedRate - 1) * killedRate);
+  return FORMATION.baseSpeed * (1 + (FORMATION.maxSpeedRate - 1) * killedRate) * waveRate;
+}
+
+/** 次の面を始める。スコアと残機はそのままで、隊列を最初の位置に並び直す。 */
+function startNextWave(state: GameState): GameState {
+  const next = createGame();
+  next.status = "playing";
+  next.wave = state.wave + 1;
+  next.score = state.score;
+  next.lives = state.lives;
+  return next;
 }
 
 /**
@@ -55,6 +67,7 @@ export function formationSpeed(alive: number, total: number): number {
 export function step(state: GameState, input: Input, dt: number, rng: Rng = Math.random): GameState {
   if (state.status !== "playing") {
     if (input.start) {
+      if (state.status === "clear") return startNextWave(state);
       const next = createGame();
       next.status = "playing";
       return next;
@@ -90,7 +103,7 @@ function moveFormation(state: GameState, dt: number): void {
   const alive = state.enemies.filter((e) => e.alive);
   if (alive.length === 0) return;
 
-  const dx = state.direction * formationSpeed(alive.length, state.enemies.length) * dt;
+  const dx = state.direction * formationSpeed(alive.length, state.enemies.length, state.wave) * dt;
   const minX = Math.min(...alive.map((e) => e.x)) + dx;
   const maxX = Math.max(...alive.map((e) => e.x + e.w)) + dx;
   const hitEdge = minX < FORMATION.margin || maxX > WIDTH - FORMATION.margin;
