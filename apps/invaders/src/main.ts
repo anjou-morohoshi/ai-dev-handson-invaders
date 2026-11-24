@@ -29,9 +29,13 @@ function frame(now: number) {
   state = step(state, readInput(), dt);
   // ゲームオーバー／クリアになった瞬間に、今回のスコアがハイスコアより高ければ更新する
   const ended = state.status === "over" || state.status === "clear";
-  if (ended && state.status !== prevStatus && state.score > highScore) {
-    highScore = state.score;
-    saveHighScore(highScore);
+  if (ended && state.status !== prevStatus) {
+    // ほかのタブが先に高い記録を保存していたら、それを低い値で上書きしない
+    highScore = Math.max(highScore, loadHighScore());
+    if (state.score > highScore) {
+      highScore = state.score;
+      saveHighScore(highScore);
+    }
   }
   render(ctx!, state, now / 1000, highScore);
   requestAnimationFrame(frame);
