@@ -15,3 +15,6 @@ dist/
 
 # ハンズオンでコントローラが書く割当文（コミットしない）
 .handson/
+
+# Playwright MCP が書き出すスクリーンショットとログ（コミットしない）
+.playwright-mcp/
