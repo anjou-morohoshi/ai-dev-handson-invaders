@@ -56,6 +56,20 @@ brew install gh
 
 - 入ったら、下の「[GitHub にログインする](#github-にログインする)」の手順で GitHub にログインする。
 - 新しい版にするときは `brew upgrade gh`。
+
+エージェントが画面を確かめられるよう、Claude Code に Playwright MCP を登録します（各自のマシンで行う。リポジトリには登録しない）。
+版は `@playwright/mcp@0.0.86` にそろえ、ブラウザ本体も同じ版で入れます（Windows の「⑤」と同じ考え方）。
+
+```bash
+npx -y @playwright/mcp@0.0.86 install-browser chromium
+claude mcp add --scope user playwright -- npx -y @playwright/mcp@0.0.86 --headless --browser chromium
+claude mcp list
+```
+
+- 「`npm install` を先に」という警告の枠が出ることがあるが、問題ない。
+- `claude mcp list` で `playwright: ... ✔ Connected` と出れば登録できている。
+- 動いている Claude Code は、起動し直すまで MCP を使えない。`/exit` → `claude --continue` → `herdr agent rename <ペイン ID> <名前>`（ペイン ID は `herdr agent list` で確かめる）。
+- Mac の手順は実機で確かめていない。
 - ほかに使う道具（Claude Code・gh・git・Node.js 22 以上）と確かめ方は、[ハンズオンの手順の「事前に用意するもの」](docs/handson/README.md#1-事前に用意するもの)の表にあります。
 
 ## Windows の事前準備
@@ -214,6 +228,48 @@ Docker Compose version v5.7.0
 - `gh auth status` は `✓ Logged in to github.com` と `Git operations protocol: https` が出ればよい（「[GitHub にログインする](#github-にログインする)」で HTTPS を選んだ結果）。
 - `Token:` は伏せ字で表示される。伏せ字でない値が出ることがあっても、画面の写しや Issue・PR に貼らない。
 - 途中のコマンドが見つからない（`command not found`）ときは、そこで止まる。その道具を ④ の手順で入れ直し、Ubuntu を開き直してから、もう一度実行する。
+
+### ⑤ エージェントが画面を確かめられるようにする（Playwright MCP）
+
+エージェントは、ブラウザを動かす道具（[Playwright MCP](https://github.com/microsoft/playwright-mcp)）でゲームの画面を開き、スクリーンショットを撮って確かめます。
+そのために、OS のライブラリ・日本語のフォント・ブラウザ本体を入れ、Claude Code に MCP を登録します。
+
+**`sudo` が要るコマンドは、Claude Code ではなく、ふつうの端末（Ubuntu の画面）で打ちます。**
+Claude Code の `!` から打つと、`sudo` のパスワードを入れられずに止まります。
+
+```bash
+# OS のライブラリと日本語のフォント（ふつうの端末で打つ。Ubuntu のパスワードを聞かれる）
+sudo apt-get install -y libnss3 libnspr4 libasound2t64 fonts-noto-cjk
+```
+
+- Ubuntu 22.04 では `libasound2t64` が無いので、`libasound2` に置き換える。
+- `fonts-noto-cjk` が無いと、スクリーンショットの日本語が □ になる。
+
+ブラウザ本体は、MCP と**同じ版**の `@playwright/mcp` で入れます（版がずれると、MCP がブラウザを開けません）。
+こちらは `sudo` を付けません（`sudo npx …` は nvm で入れた node が見つからず失敗します）。
+
+```bash
+# ブラウザ本体（chromium）。~/.cache/ms-playwright/ に入る
+npx -y @playwright/mcp@0.0.86 install-browser chromium
+```
+
+- 「`npm install` を先に」という警告の枠が出ることがあるが、問題ない（そのまま入る）。
+- 2026-11-25 に動いた組み合わせは `@playwright/mcp@0.0.86`・chromium 1255。
+
+MCP は、各自のマシンの Claude Code に登録します（リポジトリには登録しません）。
+`--browser chromium` が無いと Google Chrome を探して失敗するため、`--headless --browser chromium` を付けます。版は上と同じ `0.0.86` にそろえます。
+
+```bash
+claude mcp add --scope user playwright -- npx -y @playwright/mcp@0.0.86 --headless --browser chromium
+claude mcp list
+```
+
+- `claude mcp list` で `playwright: ... ✔ Connected` と出れば登録できている。
+- **動いている Claude Code（エージェント）は、起動し直すまで MCP を使えない。** herdr のペインで動いているときは、そのペインで次のとおり起動し直す。
+  1. Claude Code で `/exit` を打って終える
+  2. 同じペインで `claude --continue` を打ち、前の会話から再開する
+  3. `herdr agent list` でそのペインの ID を確かめ、`herdr agent rename <ペイン ID> <名前>`（例: `agent-a`）で名前を付け直す
+- スクリーンショットとログは、Claude Code を起動したフォルダー（worktree ではなく clone した側のこともある）の `.playwright-mcp/` に書き出される。`.gitignore` に入れてあるので、コミットされない。
 
 ### Windows で詰まりやすい所
 
