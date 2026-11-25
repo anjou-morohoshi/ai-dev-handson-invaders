@@ -72,7 +72,8 @@ herdr agent prompt controller "【agent-a→controller 完了】PR #12 を作成
 - 画面の確認は、ブラウザでキー操作（← → で移動・Space で発射・Enter でスタート）して確かめる。
   ブラウザは **Playwright MCP**（`mcp__playwright__*` の道具）で動かし、スクリーンショットを撮って見る。
   Playwright MCP を使うのは、割当文で開発サーバーを動かすよう指示されたエージェントだけ（コントローラは使わない）。
-  準備（ブラウザ本体・日本語のフォント・MCP の登録）は README の「⑤ エージェントが画面を確かめられるようにする」にある。
+  準備（ブラウザ本体・日本語のフォント・MCP の登録）は README の[「Windows の事前準備」](README.md#windows-の事前準備)の ⑤、
+  または[「Mac の事前準備」](README.md#mac-の事前準備)にある。
   MCP が使えないときは、自分で入れようとせず（`sudo` は打てない）、コントローラへ「停止」で報告する。
   スクリーンショットとログは、Claude Code を起動したフォルダーの `.playwright-mcp/` に書き出される（worktree の中とは限らない。`.gitignore` 済み。コミットしない）。
 - 開発サーバーは割当文で指定されたポートで起動する（例: `npm run dev -- --port 5174`）。

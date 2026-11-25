@@ -56,6 +56,7 @@ brew install gh
 
 - 入ったら、下の「[GitHub にログインする](#github-にログインする)」の手順で GitHub にログインする。
 - 新しい版にするときは `brew upgrade gh`。
+- ほかに使う道具（Claude Code・gh・git・Node.js 22 以上）と確かめ方は、[ハンズオンの手順の「事前に用意するもの」](docs/handson/README.md#1-事前に用意するもの)の表にあります。
 
 エージェントが画面を確かめられるよう、Claude Code に Playwright MCP を登録します（各自のマシンで行う。リポジトリには登録しない）。
 版は `@playwright/mcp@0.0.86` にそろえ、ブラウザ本体も同じ版で入れます（Windows の「⑤」と同じ考え方）。
@@ -69,12 +70,12 @@ claude mcp list
 - 「`npm install` を先に」という警告の枠が出ることがあるが、問題ない。
 - `claude mcp list` で `playwright: ... ✔ Connected` と出れば登録できている。
 - 動いている Claude Code は、起動し直すまで MCP を使えない。`/exit` → `claude --continue` → `herdr agent rename <ペイン ID> <名前>`（ペイン ID は `herdr agent list` で確かめる）。
+  ほかのエージェントが同じフォルダーで動いているときは、`claude --continue` が別の会話を開くことがある。そのときは `claude --resume` の一覧から自分の会話を選ぶ（Windows の「⑤」と同じ）。
 - Mac の手順は実機で確かめていない。
-- ほかに使う道具（Claude Code・gh・git・Node.js 22 以上）と確かめ方は、[ハンズオンの手順の「事前に用意するもの」](docs/handson/README.md#1-事前に用意するもの)の表にあります。
 
 ## Windows の事前準備
 
-当日までに次を済ませておきます。**① 〜 ③ はゲームを遊ぶだけの人（受講者）も必要**、④ はハンズオンで開発の流れを動かす人だけ必要です。
+当日までに次を済ませておきます。**① 〜 ③ はゲームを遊ぶだけの人（受講者）も必要**、④・⑤ はハンズオンで開発の流れを動かす人だけ必要です。
 ② 以降のコマンドは、すべて **Ubuntu の画面**で実行します（開き方は ① の後の「[Ubuntu の画面を開く](#ubuntu-の画面を開く)」）。PowerShell で実行するのは ① だけです。
 
 ### ① WSL 2 を入れる
@@ -239,6 +240,7 @@ Claude Code の `!` から打つと、`sudo` のパスワードを入れられ�
 
 ```bash
 # OS のライブラリと日本語のフォント（ふつうの端末で打つ。Ubuntu のパスワードを聞かれる）
+sudo apt-get update
 sudo apt-get install -y libnss3 libnspr4 libasound2t64 fonts-noto-cjk
 ```
 
@@ -267,7 +269,9 @@ claude mcp list
 - `claude mcp list` で `playwright: ... ✔ Connected` と出れば登録できている。
 - **動いている Claude Code（エージェント）は、起動し直すまで MCP を使えない。** herdr のペインで動いているときは、そのペインで次のとおり起動し直す。
   1. Claude Code で `/exit` を打って終える
-  2. 同じペインで `claude --continue` を打ち、前の会話から再開する
+  2. 同じペインで `claude --continue` を打ち、前の会話から再開する。
+     `claude --continue` は「そのフォルダーで最後に使った会話」を開くため、ほかのエージェントやコントローラが同じフォルダーで動いていると、別の会話が開くことがある。
+     そのときは `/exit` で抜け、`claude --resume` の一覧から自分の会話を選んで再開する
   3. `herdr agent list` でそのペインの ID を確かめ、`herdr agent rename <ペイン ID> <名前>`（例: `agent-a`）で名前を付け直す
 - スクリーンショットとログは、Claude Code を起動したフォルダー（worktree ではなく clone した側のこともある）の `.playwright-mcp/` に書き出される。`.gitignore` に入れてあるので、コミットされない。
 
