@@ -59,7 +59,7 @@ brew install gh
 - ほかに使う道具（Claude Code・gh・git・Node.js 22 以上）と確かめ方は、[ハンズオンの手順の「事前に用意するもの」](docs/handson/README.md#1-事前に用意するもの)の表にあります。
 
 レビュー（[AGENTS.md の手順 5](AGENTS.md#開発の流れすべての変更で守る)）に使う Codex CLI を入れて、ChatGPT のアカウントでログインします（Node.js 22 以上が先に要る）。
-ChatGPT を契約していない人は入れなくてよい（レビューは予備の `claude -p` で行う）。
+Codex CLI を使えない人（ChatGPT のアカウントが無い・プランで使えないなど）は入れなくてよい（レビューは予備の `claude -p` で行う）。
 
 ```bash
 npm install -g @openai/codex
@@ -215,7 +215,7 @@ GitHub CLI（gh）は、公式のパッケージ置き場を登録して入れ�
 - 当日は herdr の 3 つのペイン（コントローラ・エージェント 2 つ）を、すべてこの Ubuntu の中で起動する。
 
 レビュー（[AGENTS.md の手順 5](AGENTS.md#開発の流れすべての変更で守る)）に使う Codex CLI を入れて、ChatGPT のアカウントでログインします（上で入れた Node.js の npm で入れる。`sudo` は付けない）。
-ChatGPT を契約していない人は入れなくてよい（レビューは予備の `claude -p` で行う）。
+Codex CLI を使えない人（ChatGPT のアカウントが無い・プランで使えないなど）は入れなくてよい（レビューは予備の `claude -p` で行う）。
 
 ```bash
 npm install -g @openai/codex

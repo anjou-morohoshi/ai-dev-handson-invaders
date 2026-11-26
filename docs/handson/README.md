@@ -48,7 +48,7 @@ GitHub の Issue と PR でつないで開発する流れを、AI Invaders へ�
 | GitHub CLI（ログイン済み・このリポジトリに書込み権限） | `gh auth status` |
 | git・Node.js 22 以上 | `git --version`・`node --version`（`tools/assign.sh` も Node.js で動く） |
 | Docker（Windows は WSL 2 の Docker Engine・Mac は Colima など） | `docker compose version` |
-| Codex CLI（ChatGPT でログイン済み・手順 8 のレビューに使う。ChatGPT を契約していない人は不要で、予備の `claude -p` を使う） | `codex --version`（初回は `codex login`） |
+| Codex CLI（ChatGPT でログイン済み・手順 8 のレビューに使う。使えない人は不要で、予備の `claude -p` を使う） | `codex --version`（初回は `codex login`） |
 
 **入れ方はすべてルートの README にあります**: Mac は [「Mac の事前準備」](../../README.md#mac-の事前準備)、
 Windows は [「Windows の事前準備」](../../README.md#windows-の事前準備) の ① 〜 ④ をすべて行います。ここには入れ方を書きません。
@@ -334,7 +334,7 @@ herdr agent start agent-b --kind codex --pane <右下のペイン ID>
 
 > **混ぜるときの注意**: このリポジトリの決まりは、Claude Code 以外のエージェントも読めるように `AGENTS.md` に書いてあります（Claude Code は `CLAUDE.md` から読み込む）。
 > 一方、確認なしで動かすコマンドの許可（`.claude/settings.json`）は Claude Code だけの設定です。ほかのエージェントでは、そのエージェント自身の設定で権限を決めてください。
-> また、手順 8 のレビューは `codex exec`（使えないときは予備の `claude -p`）を使います。予備に備えて、どのエージェントを使う場合でも Claude Code は入れておきます。
+> また、手順 8 のレビューは `codex exec`（使えないときは予備の `claude -p`）を使います。**実装したエージェントが Codex のときは、レビューは `claude -p` で行います**（書いたのと別の会社のモデルに見せるため）。予備に備えて、どのエージェントを使う場合でも Claude Code は入れておきます。
 > 割当文を送る `tools/assign.sh` は、送る前に Claude Code のコマンド（`/clear`・`/compact`）を相手に送ります。Claude Code 以外のエージェントに送るときは、2 つ目の引数を `none` にし（`bash tools/assign.sh agent-b none <割当文のファイル>`）、前の会話の消し方はそのエージェントのやり方で行います。
 > このハンズオンの手順は Claude Code 3 つで確かめる前提で書いています。混ぜる場合は、前日の通し稽古で同じ組み合わせを試してください。
 
@@ -534,7 +534,7 @@ AI Invaders は、敵を全部倒すと「CLEAR!」で終わり、もう一度�
 
 - **worktree（ワークツリー）** は、1 つのリポジトリから、ブランチごとに別のフォルダーを作る git の機能です。2 つのエージェントが同じフォルダーで作業すると、互いの変更が混ざります。フォルダーを分けることで、**同時に作業しても混ざりません**。
 - **作った直後に push する**のは、途中で PC やセッションが止まっても、作業の場所を GitHub に残しておくためです。
-- **別のモデルにレビューさせる**のは、書いた本人（同じ会話の AI）は自分の思い込みに気付きにくいからです。差分と Issue だけを見せた、別の会社のモデル（Codex）に、受入条件の漏れやバグを指摘させます。違う会社のモデルは、同じ Claude とは違う所に目が向きやすくなります。ChatGPT を契約していない人は、予備として新しい Claude（`claude -p`）に同じことをさせます。その結果と対応を Issue に残すので、後から人間が判断の理由を追えます。
+- **別のモデルにレビューさせる**のは、書いた本人（同じ会話の AI）は自分の思い込みに気付きにくいからです。差分と Issue だけを見せた、別の会社のモデル（Codex）に、受入条件の漏れやバグを指摘させます。違う会社のモデルは、同じ Claude とは違う所に目が向きやすくなります。Codex を使えない人や、Codex が実装したときは、予備として新しい Claude（`claude -p`）に同じことをさせます。その結果と対応を Issue に残すので、後から人間が判断の理由を追えます。
 - **確認の画面は「人間が見る所」**: `.claude/settings.json` で、型検査・テスト・Issue と PR の作成などは確認なしで動くようにしてあります。push・開発サーバーの起動・依存の追加などは、**わざと毎回確認が出る**ようにしてあります。外に影響が出る操作だけを、人間が止められるようにするためです。中身を読まずに許可しないでください。
 
 ---
