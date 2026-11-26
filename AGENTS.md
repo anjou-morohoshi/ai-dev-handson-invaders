@@ -33,8 +33,21 @@ Claude Code は `CLAUDE.md` からこのファイルを読み込みます。
    ```
 4. **実装と検証** — 変更したアプリで型検査とテストを通す。画面の変更はブラウザで実際に操作して確かめる（下の「検証のコマンド」）。
 5. **別の目でレビュー** — まず変更を**コミットして push** する（コミットしていない変更はレビューの差分に入らない）。
-   そのうえで、差分と Issue の受入条件を別の Claude（`claude -p`）に見せて指摘を受ける。
-   指摘ごとに「直した／直さない＋理由」を決め、**Issue にコメントで残す**。直したら、もう一度コミットして push する。
+   そのうえで、差分と Issue の受入条件を、実装した Claude とは別の会社のモデル（ChatGPT の Codex CLI・`codex exec`）に見せて指摘を受ける。
+   指示文を先頭に入れて標準入力から渡し、`--sandbox read-only` で何も書き換えさせず、`-o` で**最後の答え（レビューの本文）だけ**をファイルに書き出す。
+   書き出し先は **worktree の外**（`/tmp` の下）にする（レビューのファイルはコミットしない）。
+   ```bash
+   git fetch origin
+   rm -f /tmp/review-<Issue 番号>.md   # 前回のレビューが残っていると、失敗したときに古い答えを読んでしまう
+   { echo "前半の Issue に対する、後半の差分をレビューしてください。バグ・受入条件の漏れ・既存の動きを壊していないかを見て、指摘ごとに重大度（高/中/低）を付けてください。"; gh issue view <Issue 番号>; git diff origin/main...HEAD; } | codex exec --sandbox read-only -o /tmp/review-<Issue 番号>.md -
+   cat /tmp/review-<Issue 番号>.md   # 「No such file」なら Codex が失敗している。画面のエラーを読む
+   ```
+   書き出したファイルの指摘ごとに「直した／直さない＋理由」を決め、**Issue にコメントで残す**（ファイルの中身に対応を書き足して `gh issue comment <Issue 番号> --body-file <ファイル>` で送ってよい）。
+   直したら、もう一度コミットして push する。
+
+   レビューが Issue の受入条件にまったく触れていないときは、`gh issue view` が失敗して Issue が渡っていない。エラーを直して打ち直す。
+
+   **Codex が使えないとき**（ChatGPT のアカウントが無い・プランで使えない・`codex login` していないなど）と、**実装したエージェントが Codex のとき**（別の会社のモデルに見せるため）は、予備として別の Claude（`claude -p`）でレビューを受ける。答えは画面に出るので、それを元に同じく Issue にコメントする。
    ```bash
    git fetch origin
    { gh issue view <Issue 番号>; git diff origin/main...HEAD; } | claude -p "前半の Issue に対する、後半の差分をレビューしてください。バグ・受入条件の漏れ・既存の動きを壊していないかを見て、指摘ごとに重大度（高/中/低）を付けてください。"
