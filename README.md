@@ -58,6 +58,18 @@ brew install gh
 - 新しい版にするときは `brew upgrade gh`。
 - ほかに使う道具（Claude Code・gh・git・Node.js 22 以上）と確かめ方は、[ハンズオンの手順の「事前に用意するもの」](docs/handson/README.md#1-事前に用意するもの)の表にあります。
 
+レビュー（[AGENTS.md の手順 5](AGENTS.md#開発の流れすべての変更で守る)）に使う Codex CLI を入れて、ChatGPT のアカウントでログインします（Node.js 22 以上が先に要る）。
+ChatGPT を契約していない人は入れなくてよい（レビューは予備の `claude -p` で行う）。
+
+```bash
+npm install -g @openai/codex
+codex login
+codex --version
+```
+
+- `codex login` はブラウザが開くので、ChatGPT のアカウントでログインする。
+- 新しい版にするときは、もう一度 `npm install -g @openai/codex`。
+
 エージェントが画面を確かめられるよう、Claude Code に Playwright MCP を登録します（各自のマシンで行う。リポジトリには登録しない）。
 版は `@playwright/mcp@0.0.86` にそろえ、ブラウザ本体も同じ版で入れます（Windows の「⑤」と同じ考え方）。
 
@@ -160,7 +172,7 @@ docker compose version
 
 ### ④ ハンズオンで開発の流れを動かす人だけ
 
-herdr・`tools/assign.sh`・`claude -p` のパイプは bash 前提のため、同じ Ubuntu の中で行います。
+herdr・`tools/assign.sh`・レビュー（`codex exec`・`claude -p`）のパイプは bash 前提のため、同じ Ubuntu の中で行います。
 
 ```bash
 # 基本の道具
@@ -201,6 +213,19 @@ GitHub CLI（gh）は、公式のパッケージ置き場を登録して入れ�
   herdr には Windows 版（ベータ）もあるが、このハンズオンは `tools/assign.sh` などが bash 前提のため、**WSL 2 の中の Linux 版**を使う。
   公式の資料は WSL 2 の中での利用を明記していないため、前日の通し稽古で `herdr` の起動とペインの分割まで必ず確かめる。
 - 当日は herdr の 3 つのペイン（コントローラ・エージェント 2 つ）を、すべてこの Ubuntu の中で起動する。
+
+レビュー（[AGENTS.md の手順 5](AGENTS.md#開発の流れすべての変更で守る)）に使う Codex CLI を入れて、ChatGPT のアカウントでログインします（上で入れた Node.js の npm で入れる。`sudo` は付けない）。
+ChatGPT を契約していない人は入れなくてよい（レビューは予備の `claude -p` で行う）。
+
+```bash
+npm install -g @openai/codex
+codex login
+codex --version
+```
+
+- `codex login` はブラウザでのログインの案内が出るので、ChatGPT のアカウントでログインする。WSL 2 でブラウザが開かないときは、表示された URL を Windows のブラウザに貼る。
+- 新しい版にするときは、もう一度 `npm install -g @openai/codex`。
+- Codex CLI は下の確かめ方の 1 行には入れていない（入れない人がいるため）。入れた人は `codex --version` で別に確かめる。
 
 入ったかどうかは次で確かめます。
 

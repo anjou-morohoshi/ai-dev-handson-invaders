@@ -26,7 +26,8 @@
       "Bash(herdr agent read:*)",
       "Bash(herdr agent prompt controller:*)",
       "Bash(bash tools/assign.sh:*)",
-      "Bash(claude -p:*)"
+      "Bash(claude -p:*)",
+      "Bash(codex exec:*)"
     ],
     "deny": [
       "Read(**/.env)",
